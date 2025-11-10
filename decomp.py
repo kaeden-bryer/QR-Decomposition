@@ -6,8 +6,8 @@ def qr_decomposition(A):
     Q = np.zeros((m, n)) # initialize Q with zeroes
     Q = gram_schmidt(A)   # use gram schmidt to find Q
     R = np.zeros((n, n)) # initialize R with zeroes
-    R = find_upper_triangular(np.dot(Q.T, A)) # R = Q^T * A
-    
+    R = find_upper_triangular(Q, A) # R = Q^T * A
+
     return Q, R
 
 def gram_schmidt(A):
@@ -22,16 +22,8 @@ def gram_schmidt(A):
             A[:, j] = A[:, j] / np.linalg.norm(A[:, j])
     return A
 
-def find_upper_triangular(A):
-    n = A.shape[0]
-    R = np.copy(A).astype(float)
-    for j in range(n):
-        for i in range(j+1, n):
-            if R[j, j] == 0:
-                continue
-            factor = R[i, j] / R[j, j]
-            R[i, j:n] -= factor * R[j, j:n]
-    return R
+def find_upper_triangular(Q, A):
+    return np.dot(Q.T, A)
 
 def qr_eigenvalue_approximation(matrix, iterations=10):
     A = matrix.copy().astype(float)
