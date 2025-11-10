@@ -1,49 +1,40 @@
 import numpy as np
 
-def qr_decomposition(matrix):
-    """
-    Perform QR decomposition using Gram-Schmidt process.
-    
-    Parameters:
-    matrix (np.ndarray): Input matrix A
-    
-    Returns:
-    tuple: Q (orthogonal matrix), R (upper triangular matrix)
-    """
-    A = matrix.copy().astype(float)
+def qr_decomposition(A):
+    A = A.copy().astype(float)
     m, n = A.shape
-    Q = np.zeros((m, n))
-    R = np.zeros((n, n))
-    
-    for j in range(n):
-        # Start with the j-th column of A
-        v = A[:, j].copy()
-        
-        # Subtract projections onto previous columns
-        for i in range(j):
-            R[i, j] = np.dot(Q[:, i], A[:, j])
-            v = v - R[i, j] * Q[:, i]
-        
-        # Normalize to get the j-th column of Q
-        R[j, j] = np.linalg.norm(v)
-        if R[j, j] != 0:
-            Q[:, j] = v / R[j, j]
+    Q = np.zeros((m, n)) # initialize Q with zeroes
+    Q = gram_schmidt(A)   # use gram schmidt to find Q
+    R = np.zeros((n, n)) # initialize R with zeroes
+    R = find_upper_triangular(np.dot(Q.T, A)) # R = Q^T * A
     
     return Q, R
 
-def qr_eigenvalue_approximation(matrix, iterations=10):
-    """
-    Approximate eigenvalues using the QR algorithm.
-    
-    Parameters:
-    matrix (np.ndarray): Input square matrix
-    iterations (int): Number of QR iterations to perform
-    
-    Returns:
-    tuple: (final_matrix, eigenvalue_approximations)
-    """
-    A = matrix.copy().astype(float)
+def gram_schmidt(A):
+    A = np.copy(A).astype(float) 
+    n = A.shape[1]
+    for j in range(n):
+        for k in range(j):
+            A[:, j] -= np.dot(A[:, k], A[:, j]) * A[:, k]
+        if np.isclose(np.linalg.norm(A[:, j]), 0, rtol=1e-15, atol=1e-14, equal_nan=False):
+            A[:, j] = np.zeros(A.shape[0])
+        else:    
+            A[:, j] = A[:, j] / np.linalg.norm(A[:, j])
+    return A
+
+def find_upper_triangular(A):
     n = A.shape[0]
+    R = np.copy(A).astype(float)
+    for j in range(n):
+        for i in range(j+1, n):
+            if R[j, j] == 0:
+                continue
+            factor = R[i, j] / R[j, j]
+            R[i, j:n] -= factor * R[j, j:n]
+    return R
+
+def qr_eigenvalue_approximation(matrix, iterations=10):
+    A = matrix.copy().astype(float)
     
     print(f"Starting QR algorithm with {iterations} iterations...")
     print(f"Initial matrix:\n{A}\n")
@@ -80,9 +71,3 @@ if __name__ == "__main__":
     print(f"Final matrix after 10 QR iterations:")
     print(final_matrix)
     print(f"\nApproximated eigenvalues: {eigenvalues}")
-    
-    # Compare with numpy's eigenvalue function
-    true_eigenvalues = np.linalg.eigvals(matrix)
-    print(f"True eigenvalues (numpy):  {np.sort(true_eigenvalues)}")
-    print(f"Our approximation:         {np.sort(eigenvalues)}")
-    print(f"Error: {np.sort(np.abs(np.sort(true_eigenvalues) - np.sort(eigenvalues)))}")
